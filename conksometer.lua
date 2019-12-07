@@ -39,7 +39,7 @@ function conky_main()
 	local date = os.date("*t")
 	seconds = date.sec
 	
-	render_frequency(cr, xpos, ypos, 85)
+	render_frequency(cr, xpos, ypos, 90)
 	render_cpu(cr, xpos, ypos, 90)
 	render_memory(cr, xpos, ypos, 99)
 	
@@ -51,7 +51,7 @@ end
 
 function render_cpu(cr, x, y, r)
 	
-	local _cpu = math.floor((tonumber(conky_parse ('$cpu'))*99 + cpu[1])/100 + 0.5)
+	local _cpu = math.floor((tonumber(conky_parse ('$cpu')) + cpu[1]*2)/3)
 	
 	if seconds ~= last_update then
 		table.insert(cpu,1,_cpu)
@@ -62,17 +62,17 @@ function render_cpu(cr, x, y, r)
 	
 	cairo_set_line_width (cr, 1)
 	cairo_set_source_rgba (cr, 0.3, 1, 0, 0.4)
-	cairo_rectangle (cr, x  - 290, y - 25, 180, 50)
-	cairo_move_to (cr, x - 290, y - 0)
-	cairo_line_to(cr, x - 110 , y - 0)
+	cairo_rectangle (cr, x  - 300, y - 25, 180, 50)
+	cairo_move_to (cr, x - 300, y - 0)
+	cairo_line_to(cr, x - 120 , y - 0)
 	cairo_stroke (cr)
 	
 	cairo_set_line_width (cr, 1)
 	cairo_set_source_rgba (cr, 0.3, 1, 0, 1)
-	cairo_move_to (cr, x - 111, y - cpu[1]/2 + 25)
+	cairo_move_to (cr, x - 121, y - cpu[1]/2 + 25)
 	for i=2, 180 do 
 		if cpu[i] > 0 then
-			cairo_line_to (cr, x - 110 - i , y - cpu[i]/2 +25)
+			cairo_line_to (cr, x - 120 - i , y - cpu[i]/2 +25)
 		end
 	end
 	cairo_move_to (cr, x - 290, y - 30)
@@ -92,6 +92,8 @@ function render_cpu(cr, x, y, r)
       	cairo_move_to (cr, x + r* math.cos(beta) * 0.87, y + r* math.sin(beta) * 0.87)
 		cairo_line_to (cr, x + r* math.cos(beta) * 1.03, y + r* math.sin(beta) * 1.03)
     end
+    cairo_move_to (cr, x + r* math.cos(-math.pi/2) -20, y + r* math.sin(-math.pi/2) * 0.3)
+	cairo_show_text(cr, '%CPU')
 	cairo_stroke (cr)
 	
 	cairo_set_source_rgba (cr, 0, 1, 0, 0.8)
@@ -116,9 +118,9 @@ function render_frequency(cr, x, y, r)
 		_freq = _freq + tonumber(conky_parse ('${freq_g ' .. i .. ' }'))
 	end
 	_freq = math.floor(10 * _freq / ncpu + 0.5)/10
-	freq = math.floor(freq * 9 + _freq) / 10
+	freq = math.floor((freq * 4 + _freq) * 2 ) / 10
 	
-	theta = 3*math.pi/4 - math.pi/2 * freq/5 + 0.007
+	theta = 3*math.pi/4 - 0.05 - (math.pi/2.05) * freq/5
 	
 	cairo_set_line_cap (cr, CAIRO_LINE_CAP_BUTT)
 	cairo_set_line_width (cr, 4)
@@ -131,13 +133,17 @@ function render_frequency(cr, x, y, r)
 		local beta = 3*math.pi/4 - 0.12 - (-math.pi/4 + 3*math.pi/4 - 0.24) * i / 5
       	cairo_move_to (cr, x + r* math.cos(beta) * 0.98, y + r* math.sin(beta) * 0.98)
 		cairo_line_to (cr, x + r* math.cos(beta) * 1.1, y + r* math.sin(beta) * 1.1)
+		cairo_move_to (cr, x + r* math.cos(beta) * 1.15 - 5, y + r* math.sin(beta) * 1.25 + 2)
+		cairo_show_text(cr, i)
     end
+    cairo_move_to (cr, x + r* math.cos(math.pi/2) - 15, y + r* math.sin(math.pi/2) * 0.9)
+	cairo_show_text(cr, 'GHz')
 	cairo_stroke (cr)
 	
 	cairo_set_line_width (cr, 4)
 	cairo_set_source_rgba (cr, 1, 0.6, 0, 1)
 	cairo_set_line_cap (cr, CAIRO_LINE_CAP_ROUND)
-	cairo_move_to (cr, x + r* math.cos(theta) * 0.95, y + r* math.sin(theta) * 0.95)
+	cairo_move_to (cr, x + r* math.cos(theta) * 0.9, y + r* math.sin(theta) * 0.9)
 	cairo_line_to (cr, x + r* math.cos(theta) * 1.15, y + r* math.sin(theta) * 1.15)
 	cairo_stroke (cr)
 	
@@ -157,33 +163,43 @@ function render_memory(cr, x, y, r)
 	local theta = 3*math.pi/2 * ram[1]/100 - 5*math.pi/4
 	
 	cairo_set_line_width (cr, 1)
-	cairo_set_source_rgba (cr, 1, 0.5, 0, 0.3)
-	cairo_rectangle (cr, x + 290 - 180, y - 25, 180, 50)
-	cairo_move_to (cr, x + 290 - 180, y - 0)
-	cairo_line_to(cr, x + 290, y - 0)
+	cairo_set_source_rgba (cr, 1, 0.5, 0, 0.4)
+	cairo_rectangle (cr, x + 300 - 180, y - 25, 180, 50)
+	cairo_move_to (cr, x + 300 - 180, y - 0)
+	cairo_line_to(cr, x + 300, y - 0)
 	cairo_stroke (cr)
 	
 	cairo_set_line_width (cr, 2)
-	cairo_set_source_rgba (cr, 1, 0.5, 0, 1)
-	cairo_move_to (cr, x + 110, y - 30)
+	cairo_set_source_rgba (cr, 1, 0.4, 0, 1)
+	cairo_move_to (cr, x + 120, y - 30)
 	cairo_show_text (cr, 'Memory: ' .. ram[1] .. '%, ' .. mem .. '/' .. max_memory)
-	cairo_move_to (cr, x + 290 - 1, y - ram[1]/2 + 25)
+	cairo_move_to (cr, x + 300 - 1, y - ram[1]/2 + 25)
 	for i=2, 180 do 
 		if ram[i] > 0 then
-			cairo_line_to (cr, x - i + 290, y - ram[i]/2 + 25)
+			cairo_line_to (cr, x - i + 300, y - ram[i]/2 + 25)
 		end
 	end
 	cairo_stroke (cr)
 	
-	cairo_set_line_width (cr, 6)
+	cairo_set_line_width (cr, 2)
 	cairo_set_source_rgba (cr, 1, 1, 1, 1)
-	cairo_arc (cr, x, y, r, -5*math.pi/4 - 0.03 , math.pi/4 + 0.02)
+	cairo_arc (cr, x, y, r + 3, -5*math.pi/4 - 0.01 , math.pi/4 + 0.01)
+	cairo_arc_negative (cr, x, y, r - 3, math.pi/4 + 0.01, -5*math.pi/4 - 0.01)
+	cairo_arc (cr, x, y, r + 3, -5*math.pi/4 - 0.01 , -5*math.pi/4 - 0.01)
 	cairo_stroke (cr)
 	
 	cairo_set_line_width (cr, 4)
 	cairo_set_source_rgba (cr, 1, 0.5, 0, 1)
-	cairo_arc (cr, x, y, r, - 5*math.pi/4 - 0.02 , theta)
+	cairo_arc (cr, x, y, r, - 5*math.pi/4 - 0.0 , theta)
 	cairo_stroke (cr)
+	
+	cairo_set_line_width (cr, 2)
+	cairo_line_to (cr, x + r, y - 35)
+	cairo_line_to (cr, x + 115, y - 35)
+	cairo_stroke (cr)
+	
+	cairo_arc (cr, x + 115, y - 35, 3, 0 , 2 * math.pi)
+	cairo_fill (cr)
 	
 	cairo_set_line_cap (cr, CAIRO_LINE_CAP_BUTT)
 
