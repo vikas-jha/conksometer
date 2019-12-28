@@ -1,5 +1,17 @@
 require 'cairo'
 
+config = {
+	cpu_graph_outline_color = 0x2fff003f,
+	cpu_graph_color = 0x2fff00ff,
+	meter_outline_color = 0xffffffff,
+	cpu_pointer_base_color = 0x2fff00ff,
+}
+
+-------------------------------------------------------------------------------
+--
+-- startup method
+--
+
 function conky_init()
 	ncpu = tonumber(io.popen("nproc"):read())
 	seconds = 0
@@ -13,6 +25,23 @@ function conky_init()
 		cpu[i] = -1
 	end
 end
+
+-------------------------------------------------------------------------------
+--                                                            
+-- convert degree to radian
+--
+function to_radian(angle)
+    return angle * math.pi / 180 
+end
+
+-------------------------------------------------------------------------------
+--
+-- converts hex color to decimal
+--
+function rgba_to_r_g_b_a(color)
+    return ((color / 0x1000000) % 0x10000) / 255., ((color / 0x10000) % 0x100) / 255., ((color / 0x100) % 0x100) / 255., (color % 0x100) / 255
+end
+
 
 function conky_main()
 	if conky_window == nil then
@@ -35,7 +64,6 @@ function conky_main()
 	cairo_select_font_face (cr, font, font_slant, font_face)
 	cairo_set_font_size (cr, font_size)
 	
-	--render_clock(cr, xpos , ypos - 18, 45)
 	local date = os.date("*t")
 	seconds = date.sec
 	
@@ -51,7 +79,7 @@ end
 
 function render_cpu(cr, x, y, r)
 	
-	local _cpu = math.floor((tonumber(conky_parse ('$cpu')) + cpu[1]*2)/3)
+	local _cpu = math.floor((tonumber(conky_parse ('$cpu')) + cpu[1])/2 + 0.5)
 	
 	if seconds ~= last_update then
 		table.insert(cpu,1,_cpu)
@@ -61,14 +89,15 @@ function render_cpu(cr, x, y, r)
 	local theta = 3*math.pi/2 * _cpu/100 - 5*math.pi/4
 	
 	cairo_set_line_width (cr, 1)
-	cairo_set_source_rgba (cr, 0.3, 1, 0, 0.4)
+	cairo_set_source_rgba(cr, rgba_to_r_g_b_a(config['cpu_graph_outline_color']))
+	
 	cairo_rectangle (cr, x  - 300, y - 25, 180, 50)
 	cairo_move_to (cr, x - 300, y - 0)
 	cairo_line_to(cr, x - 120 , y - 0)
 	cairo_stroke (cr)
 	
 	cairo_set_line_width (cr, 1)
-	cairo_set_source_rgba (cr, 0.3, 1, 0, 1)
+	cairo_set_source_rgba (cr, rgba_to_r_g_b_a(config['cpu_graph_color']))
 	cairo_move_to (cr, x - 121, y - cpu[1]/2 + 25)
 	for i=2, 180 do 
 		if cpu[i] > 0 then
@@ -80,19 +109,19 @@ function render_cpu(cr, x, y, r)
 	cairo_stroke (cr)
 	
 	cairo_set_line_width (cr, 6)
-	cairo_set_source_rgba (cr, 1, 1, 1, 1)
-	cairo_arc (cr, x, y, r, -5*math.pi/4 , math.pi/4)
+	cairo_set_source_rgba (cr, rgba_to_r_g_b_a(config['meter_outline_color']))
+	cairo_arc (cr, x, y, r, to_radian(135) , to_radian(45))
 	cairo_stroke (cr)
 	
 	cairo_set_line_width (cr, 4)
 	for i = 0,10 do
-		local beta = -5*math.pi/4 + (math.pi/4 + 5*math.pi/4) * i / 10
+		local beta = to_radian(135) + to_radian(270) * i / 10
 		cairo_move_to (cr, x + r* math.cos(beta) * 0.73 - 10, y + r* math.sin(beta) * 0.75 + 5)
 		cairo_show_text(cr, i * 10)
       	cairo_move_to (cr, x + r* math.cos(beta) * 0.87, y + r* math.sin(beta) * 0.87)
 		cairo_line_to (cr, x + r* math.cos(beta) * 1.03, y + r* math.sin(beta) * 1.03)
     end
-    cairo_move_to (cr, x + r* math.cos(-math.pi/2) -20, y + r* math.sin(-math.pi/2) * 0.3)
+    cairo_move_to (cr, x + r* math.cos(-math.pi/2) - 20, y + r* math.sin(-math.pi/2) * 0.3)
 	cairo_show_text(cr, '%CPU')
 	cairo_stroke (cr)
 	
@@ -118,9 +147,9 @@ function render_frequency(cr, x, y, r)
 		_freq = _freq + tonumber(conky_parse ('${freq_g ' .. i .. ' }'))
 	end
 	_freq = math.floor(10 * _freq / ncpu + 0.5)/10
-	freq = math.floor((freq * 4 + _freq) * 2 ) / 10
+	freq = math.floor((freq * 1 + _freq) * 5  + 0.5) / 10
 	
-	theta = 3*math.pi/4 - 0.05 - (math.pi/2.05) * freq/5
+	theta = 3*math.pi/4 - 0.1 - (math.pi/2 - 0.2) * freq/5
 	
 	cairo_set_line_cap (cr, CAIRO_LINE_CAP_BUTT)
 	cairo_set_line_width (cr, 4)
@@ -203,22 +232,4 @@ function render_memory(cr, x, y, r)
 	
 	cairo_set_line_cap (cr, CAIRO_LINE_CAP_BUTT)
 
-end
-
-function render_clock(cr, x, y, r)
-	local date_string =  (conky_parse ('${time %H:%M:%S}'))
- 
-    cairo_set_source_rgba (cr, 1, 1, 1, 1)
-	cairo_move_to (cr, x-32, y + 5)
-	cairo_show_text (cr, date_string)
-	cairo_set_line_width (cr, 8)
-	cairo_move_to (cr, x, y - r - 3)
-	cairo_set_source_rgba (cr, 1, 1, 1, 0.5)
-	cairo_arc (cr, x, y, r , -math.pi/2 , 3 * math.pi/2)
-	cairo_stroke (cr)
-	cairo_set_source_rgba (cr, 1, 1, 1, alpha)
-	cairo_stroke (cr)
-	cairo_set_line_width (cr, 8)
-	cairo_arc (cr, x, y, r, -math.pi/2 , 2 * math.pi * seconds/60 - math.pi/2)
-	cairo_stroke (cr)
 end

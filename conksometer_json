@@ -1,0 +1,42 @@
+conky.config = {
+double_buffer = true,
+own_window = true,
+own_window_type = 'normal',
+own_window_transparent = true,
+own_window_hints = 'undecorated,sticky,skip_taskbar,skip_pager,below',
+own_window_argb_visual = true,
+own_window_colour = '000000',
+own_window_class = 'conky',
+
+update_interval = 0.1,
+
+double_buffer = true,
+no_buffers = true,
+use_xft = true,
+xftalpha = 0.1,
+
+
+draw_borders = false,
+draw_outline = true,
+draw_shades = false,
+draw_graph_borders = false,
+show_graph_scale = true,
+alignment = 'bottom_middle',
+
+minimum_width = 600,
+maximum_width = 600,
+minimum_height = 300,
+
+lua_load = './conksometer.lua',
+lua_draw_hook_post = 'main',
+lua_startup_hook = 'init',
+
+font = 'Ubuntu:style=medium:size=11'
+
+}
+
+conky.text = [[
+${voffset 10}
+${voffset -100}${memperc}%
+${ibm_temps 0}
+]]
